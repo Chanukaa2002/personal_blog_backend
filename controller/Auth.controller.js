@@ -120,13 +120,4 @@ export const logout = async (req, res) => {
       .json({ error: "Server Error" });
   }
 };
-export const init = async (req, res) => {
-  try {
-    res.send("Hello world");
-  } catch (error) {
-    console.log(error);
-    res
-      .status(HTTPStatus.INTERNAL_SERVER_ERROR)
-      .json({ error: "Server Error" });
-  }
-};
+
