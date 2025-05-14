@@ -25,3 +25,6 @@ server.listen(PORT, () => {
   console.log(`Server running in => ${PORT}`);
   connectDB();
 });
+
+
+export default server
