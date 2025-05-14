@@ -18,6 +18,10 @@ server.use(bodyParser.urlencoded({ extended: true }));
 server.use(cookieParser());
 server.use("/api/v1/auth/", AuthRoute);
 server.use("/api/v1/post/", PostRoute);
+server.use((err, req, res, next) => {
+  console.error("ERROR:", err);
+  res.status(500).json({ error: "Internal Server Error" });
+});
 server.get("/", (req, res) => {
   res.send("Hello world");
 });
