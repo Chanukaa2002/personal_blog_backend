@@ -18,6 +18,7 @@ server.use(bodyParser.urlencoded({ extended: true }));
 server.use(cookieParser());
 server.use("/api/v1/auth/", AuthRoute);
 server.use("/api/v1/post/", PostRoute);
+server.use("/",init)
 server.listen(PORT, () => {
   console.log(`Server running in => ${PORT}`);
   connectDB();
