@@ -10,10 +10,26 @@ dotenv.config();
 
 const server = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = [
+  "https://blog.chanukadilshan.live",
+  "http://localhost:5173"
+];
+
 const corsOptions = {
-  origin: "*", // Replace with your actual frontend URL
-  credentials: true,
-  optionsSuccessStatus: 200,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // Required for cookies/sessions
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  optionsSuccessStatus: 200
 };
 server.use(cors(corsOptions));
 server.use(express.json());
