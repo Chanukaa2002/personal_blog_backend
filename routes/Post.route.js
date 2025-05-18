@@ -13,6 +13,7 @@ const router = Router();
 
 router.post("/", protectRoute, createPost);
 router.get("/all", getAllPost);
+router.get("/all/:authorId", getAllPost);
 router.delete("/:id", protectRoute, deletePost);
 router.put("/:id", protectRoute, updatePost);
 router.get("/id/:id", getPost);

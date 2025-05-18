@@ -14,6 +14,7 @@ export const createPost = async (req, res) => {
       title,
       content,
       tag,
+      author: req.user._id,
     });
     if (!post) {
       return res.status(HTTPStatus.BAD_REQUEST).json({
@@ -37,8 +38,7 @@ export const deletePost = async (req, res) => {
   try {
     const { id } = req.params;
 
-
-    // Check if post exists and user has permission (if needed)
+    // Check if post exists
     const post = await Post.findById(id);
     if (!post) {
       return res.status(HTTPStatus.NOT_FOUND).json({
@@ -47,28 +47,21 @@ export const deletePost = async (req, res) => {
       });
     }
 
-    // Optional: Add authorization check here if needed
-    // if (post.user.toString() !== req.user.id) {
-    //   return res.status(HTTPStatus.FORBIDDEN).json({
-    //     success: false,
-    //     message: "Not authorized to delete this post",
-    //   });
-    // }
+    // Authorization check - only author can delete
+    if (post.author.toString() !== req.user._id.toString()) {
+      return res.status(HTTPStatus.FORBIDDEN).json({
+        success: false,
+        message: "Not authorized to delete this post",
+      });
+    }
 
     // Delete the post
     const deletedPost = await Post.findByIdAndDelete(id);
 
-    if (!deletedPost) {
-      return res.status(HTTPStatus.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: "Post could not be deleted due to server error",
-      });
-    }
-
     res.status(HTTPStatus.OK).json({
       success: true,
       message: "Post deleted successfully",
-      postId: deletedPost._id, // Return the ID of deleted post for reference
+      postId: deletedPost._id,
     });
   } catch (error) {
     console.error(`Error in deletePost method => ${error}`);
@@ -81,7 +74,6 @@ export const deletePost = async (req, res) => {
   }
 };
 
-//update a post
 export const updatePost = async (req, res) => {
   try {
     const { id } = req.params;
@@ -95,7 +87,22 @@ export const updatePost = async (req, res) => {
       });
     }
 
- 
+    // First find the post to check ownership
+    const existingPost = await Post.findById(id);
+    if (!existingPost) {
+      return res.status(HTTPStatus.NOT_FOUND).json({
+        success: false,
+        message: "Post not found",
+      });
+    }
+
+    // Authorization check - only author can update
+    if (existingPost.author.toString() !== req.user._id.toString()) {
+      return res.status(HTTPStatus.FORBIDDEN).json({
+        success: false,
+        message: "Not authorized to update this post",
+      });
+    }
 
     // Find and update the post
     const updatedPost = await Post.findByIdAndUpdate(
@@ -106,17 +113,10 @@ export const updatePost = async (req, res) => {
         tag: tag?.trim(),
       },
       {
-        new: true, // Return the updated document
-        runValidators: true, // Run model validations on update
+        new: true,
+        runValidators: true,
       }
     );
-
-    if (!updatedPost) {
-      return res.status(HTTPStatus.NOT_FOUND).json({
-        success: false,
-        message: "Post not found or could not be updated",
-      });
-    }
 
     res.status(HTTPStatus.OK).json({
       success: true,
@@ -126,7 +126,6 @@ export const updatePost = async (req, res) => {
   } catch (error) {
     console.error(`Error in updatePost method => ${error}`);
 
-    // Handle specific Mongoose validation errors
     if (error.name === "ValidationError") {
       return res.status(HTTPStatus.BAD_REQUEST).json({
         success: false,
@@ -164,26 +163,39 @@ export const getPost = async (req, res) => {
 //get all posts
 export const getAllPost = async (req, res) => {
   try {
+    const { authorId } = req.params;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
+    // Build the query conditionally
+    const query = authorId ? { author: authorId } : {};
+
     const [posts, totalCount] = await Promise.all([
-      Post.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Post.countDocuments(),
+      Post.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('author', 'username email'), // Optional: populate author info
+      Post.countDocuments(query),
     ]);
 
     res.status(HTTPStatus.OK).json({
+      success: true,
       posts,
       totalPages: Math.ceil(totalCount / limit),
       currentPage: page,
       totalCount,
+      isFiltered: !!authorId, // Indicates if results are filtered by author
+      authorId: authorId || null, // Return the authorId if provided
     });
   } catch (error) {
     console.error(`Error in getAllPost method => ${error}`);
-    res
-      .status(HTTPStatus.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal server error" });
+    res.status(HTTPStatus.INTERNAL_SERVER_ERROR).json({ 
+      success: false,
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
   }
 };
 
