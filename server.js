@@ -6,12 +6,17 @@ import PostRoute from "./routes/Post.route.js";
 import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 dotenv.config();
 
 const server = express();
 const PORT = process.env.PORT || 5000;
-
-server.use(cors());
+const corsOptions = {
+  origin: "*", // Replace with your actual frontend URL
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+server.use(cors(corsOptions));
 server.use(express.json());
 server.use(bodyParser.json());
 server.use(bodyParser.urlencoded({ extended: true }));
@@ -30,5 +35,4 @@ server.listen(PORT, () => {
   connectDB();
 });
 
-
-export default server
+export default server;
