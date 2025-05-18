@@ -6,7 +6,6 @@ import PostRoute from "./routes/Post.route.js";
 import cors from "cors";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
-import cors from "cors";
 dotenv.config();
 
 const server = express();
